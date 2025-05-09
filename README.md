@@ -4,8 +4,22 @@ Horizon Bookings - Hotel Management System
 
 Horizon Bookings is a fully-featured Hotel Management System designed to provide a seamless experience for both hotel customers and administrators. This application allows users to view, book, and manage hotel rooms while providing administrators with the tools to manage bookings and user information efficiently.
 
+
+
 🖼️ Project Screenshots
 <img width="486" alt="image" src="https://github.com/user-attachments/assets/c497a835-564f-4c46-b2ca-d7b2b8ce06be" />
+<img width="501" alt="image" src="https://github.com/user-attachments/assets/ea5de324-9b22-483e-a23b-7405784eb5b2" />
+<img width="501" alt="image" src="https://github.com/user-attachments/assets/647a808a-29b7-47ef-b3fc-5765d4dd55bf" />
+<img width="506" alt="image" src="https://github.com/user-attachments/assets/601a2ae3-ebfc-48f9-8fc6-4a8633ab33a9" />
+<img width="502" alt="image" src="https://github.com/user-attachments/assets/a2def8c8-4ab7-4e1e-b3f5-64a1e2b41d05" />
+<img width="505" alt="image" src="https://github.com/user-attachments/assets/0ee5bdf1-17a6-45c3-851e-ce3419d6f2d9" />
+<img width="505" alt="image" src="https://github.com/user-attachments/assets/f1a5a27d-de06-4980-8c59-0f03851469d6" />
+
+
+
+
+
+
 
 
 📌 Key Features
