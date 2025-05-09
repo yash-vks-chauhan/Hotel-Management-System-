@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Hotel Details</title>
+  <style>
+    body {
+        font-family: Arial, sans-serif;
+        text-align: center;
+        margin: 20px;
+        background-color: #f9f9f9; /* Light background */
+        color: #333;
+    }
+    .container {
+        width: 80%; /* Wider container */
+        max-width: 900px; /* Max width */
+        margin: 20px auto; /* Center with margin */
+        text-align: left;
+        background-color: #fff; /* White background */
+        padding: 30px; /* More padding */
+        border-radius: 10px; /* Rounded corners */
+        box-shadow: 0 4px 15px rgba(0,0,0,0.1); /* Soft shadow */
+    }
+    img#hotelImage { /* Target image specifically */
+        width: 100%;
+        height: auto;
+        max-height: 450px; /* Limit image height */
+        object-fit: cover; /* Ensure image covers area nicely */
+        border-radius: 8px; /* Rounded corners for image */
+        margin-bottom: 25px; /* Space below image */
+        border: 1px solid #eee; /* Subtle border */
+    }
+    h2 {
+        color: #333;
+        margin-bottom: 20px; /* Space below title */
+        text-align: center; /* Center title */
+    }
+    p {
+        font-size: 17px; /* Slightly smaller text */
+        color: #555;
+        line-height: 1.6; /* Improve readability */
+        margin-bottom: 12px; /* Space between paragraphs */
+    }
+    p strong {
+        color: #333; /* Darker labels */
+        min-width: 120px; /* Align labels somewhat */
+        display: inline-block;
+    }
+    .button-container { /* Center buttons */
+        text-align: center;
+        margin-top: 30px; /* Space above buttons */
+        display: flex; /* Use flexbox for alignment */
+        justify-content: center; /* Center horizontally */
+        gap: 15px; /* Space between buttons */
+        flex-wrap: wrap; /* Allow buttons to wrap on small screens */
+    }
+    .back, .book-now-button { /* Style both buttons similarly */
+        display: inline-block;
+        padding: 10px 25px; /* Adjusted padding */
+        color: white;
+        text-decoration: none;
+        border-radius: 6px;
+        font-size: 16px;
+        font-weight: 500;
+        border: none; /* Remove border */
+        cursor: pointer;
+        transition: background-color 0.2s ease, transform 0.1s ease;
+    }
+    .back {
+        background-color: #6c757d; /* Gray for back button */
+    }
+    .back:hover {
+        background-color: #5a6268;
+        transform: translateY(-1px);
+    }
+    /* Changed Book Now button text potentially, but keeping class name */
+    .book-now-button {
+        background-color: #5e60ce; /* Use theme color */
+    }
+    .book-now-button:hover {
+        background-color: #4c3ec7; /* Darker theme color */
+        transform: translateY(-1px);
+    }
+  </style>
+</head>
+<body>
+
+<div class="container">
+  <h2>Hotel Details</h2>
+  <img id="hotelImage" src="placeholder.jpg" alt="Hotel Image Loading...">
+  <p><strong>Name:</strong> <span id="hotelName">Loading...</span></p>
+  <p><strong>Location:</strong> <span id="hotelLocation">Loading...</span></p>
+  <p><strong>Price Per Night:</strong> ₹<span id="hotelPrice">Loading...</span></p>
+  <p><strong>Description:</strong> <span id="hotelDescription">Loading...</span></p>
+  <p><strong>Amenities:</strong> <span id="hotelAmenities">Loading...</span></p>
+  <p><strong>Rating:</strong> ⭐<span id="hotelRating">Loading...</span> / 5</p>
+  <p><strong>Contact:</strong> <span id="hotelContact">Loading...</span></p>
+
+  <div class="button-container">
+    <!-- Button text could be "View Rooms" or "Check Availability" -->
+    <a id="bookNow" class="book-now-button" href="#" onclick="handleViewRooms(event)">Check Rooms</a>
+    <!-- Back Button -->
+    <a id="backButton" class="back" href="hotels.html">Back to Hotels</a>
+  </div>
+</div>
+
+<script>
+  document.addEventListener("DOMContentLoaded", function () {
+      // Extract hotel ID and User ID from URL
+      const params = new URLSearchParams(window.location.search);
+      const hotelId = params.get("id"); // Keep parameter name as 'id' for hotel
+      const currentUserId = params.get("userId"); // Get the userId
+
+      // Store IDs globally within this script's scope or pass them
+      let fetchedHotelId = null;
+      let globalUserId = currentUserId;
+
+      console.log("Extracted Hotel ID (id):", hotelId);
+      console.log("Extracted User ID (userId):", currentUserId);
+
+      // Update Back Button Link to include userId
+      const backButton = document.getElementById("backButton");
+      if (backButton && currentUserId) {
+          backButton.href = `hotels.html?userId=${currentUserId}`;
+      } else if (backButton) {
+          console.warn("User ID not found, Back button will not retain user context.");
+      }
+
+      if (!hotelId) {
+          alert("No hotel ID specified. Redirecting to hotels page.");
+          window.location.href = currentUserId ? `hotels.html?userId=${currentUserId}` : "hotels.html";
+      } else {
+           fetchedHotelId = hotelId; // Store the valid hotelId
+
+          // Fetch hotel details from backend
+          fetch(`http://localhost:8081/hotels/${hotelId}`)
+              .then(response => {
+                  if (!response.ok) { throw new Error(`HTTP error! Status: ${response.status}`); }
+                  return response.json();
+              })
+              .then(hotel => {
+                   if (!hotel || typeof hotel !== 'object') { throw new Error("Invalid hotel data received."); }
+                  document.getElementById("hotelName").textContent = hotel.name ?? 'N/A';
+                  document.getElementById("hotelLocation").textContent = hotel.location ?? 'N/A';
+                  document.getElementById("hotelPrice").textContent = hotel.pricePerNight ?? 'N/A';
+                  document.getElementById("hotelDescription").textContent = hotel.description ?? 'N/A';
+                  document.getElementById("hotelAmenities").textContent = hotel.amenities ?? 'N/A';
+                  document.getElementById("hotelRating").textContent = hotel.rating ?? 'N/A';
+                  document.getElementById("hotelContact").textContent = hotel.contact ?? 'N/A';
+                  const imgElement = document.getElementById("hotelImage");
+                   imgElement.src = hotel.imageUrl && hotel.imageUrl.trim() !== '' ? hotel.imageUrl : 'placeholder.jpg';
+                   imgElement.alt = hotel.name ? `Image of ${hotel.name}` : 'Hotel Image';
+              })
+              .catch(error => {
+                  console.error("Error fetching hotel details:", error);
+                   const container = document.querySelector('.container');
+                   if (container) {
+                       container.innerHTML = `<h2>Error Loading Hotel</h2><p style="color: red;">Could not load details for this hotel. Please try again later.</p><p><a class="back" href="${currentUserId ? `hotels.html?userId=${currentUserId}` : 'hotels.html'}">Back to Hotels</a></p>`;
+                   }
+              });
+      }
+
+      // --- Function to handle View Rooms click --- MODIFIED TARGET ---
+      // Renamed function for clarity, updated onclick attribute on the button
+      window.handleViewRooms = function(event) {
+          event.preventDefault(); // Prevent default link behavior
+
+          if (!fetchedHotelId) {
+              alert("Hotel details not loaded yet. Please wait or go back.");
+              return;
+          }
+
+          // *** Construct the URL for the rooms page ***
+          let roomsUrl = `room.html?id=${fetchedHotelId}`; // Target rooms.html, use 'id' for hotel
+
+          if (globalUserId) {
+              roomsUrl += `&userId=${globalUserId}`; // Append userId
+              console.log("Navigating to Rooms page:", roomsUrl);
+              window.location.href = roomsUrl; // Redirect to rooms.html
+          } else {
+              console.warn("User ID is missing. Cannot proceed to view rooms.");
+              alert("User session information is missing. Please log in again.");
+              // window.location.href = 'login.html'; // Optional: redirect to login
+          }
+      }
+      // --- End handleViewRooms function ---
+
+  });
+</script>
+
+</body>
+</html>

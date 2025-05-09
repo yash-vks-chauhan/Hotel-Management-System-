@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Available Rooms</title>
+  <style>
+    /* Your CSS styles */
+    body {
+        font-family: Arial, sans-serif;
+        margin: 0;
+        padding: 20px;
+        background-color: #f8f9fa;
+    }
+    h1, h2 {
+        text-align: center;
+        color: #333;
+        margin-bottom: 25px;
+    }
+    .container {
+        width: 80%;
+        max-width: 900px;
+        margin: auto;
+        text-align: left;
+    }
+    .room {
+        border: 1px solid #ddd;
+        padding: 20px;
+        margin: 15px 0;
+        border-radius: 8px;
+        background-color: #ffffff;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+        flex-wrap: wrap;
+        gap: 15px;
+    }
+    .room-info {
+        flex: 1;
+        min-width: 250px;
+    }
+    .room-info h3 {
+        margin-top: 0;
+        margin-bottom: 10px;
+        color: #5e60ce; /* Theme color */
+    }
+     .room-info p {
+        margin-bottom: 8px;
+        color: #555;
+        line-height: 1.5;
+    }
+     .room-info p strong {
+        color: #333;
+        margin-right: 5px;
+     }
+     /* Specific style for description if needed */
+     .room-description {
+        /* font-style: italic; */ /* Removed italic */
+        color: #6c757d; /* Slightly lighter text */
+        font-size: 0.95em;
+        margin-top: 5px; /* Add some space above description */
+     }
+    .book-button {
+        padding: 10px 20px;
+        background-color: #5e60ce; /* Theme color */
+        color: white;
+        text-decoration: none;
+        border-radius: 5px;
+        cursor: pointer;
+        text-align: center;
+        border: none;
+        font-weight: 500;
+        transition: background-color 0.2s ease, transform 0.1s ease;
+        white-space: nowrap;
+    }
+    .book-button:hover {
+        background-color: #4c3ec7; /* Darker theme color */
+         transform: translateY(-1px);
+    }
+    #rooms-container p { /* Style for loading/error messages */
+        text-align: center;
+        font-size: 1.1em;
+        color: #6c757d;
+        padding: 30px;
+    }
+     #rooms-container p[style*="color: red"]::before { /* Add icon for errors */
+        content: "⚠️ ";
+     }
+  </style>
+</head>
+<body>
+<h1>Available Rooms</h1>
+<div class="container" id="rooms-container">
+  <p>Loading rooms...</p> <!-- Initial message -->
+</div>
+
+<script>
+  document.addEventListener("DOMContentLoaded", function () {
+    const urlParams = new URLSearchParams(window.location.search);
+    const hotelIdFromUrl = urlParams.get("id");
+    const userIdFromUrl = urlParams.get("userId");
+    const roomsContainer = document.getElementById("rooms-container");
+
+    console.log("Hotel ID from URL (id):", hotelIdFromUrl);
+    console.log("User ID from URL (userId):", userIdFromUrl);
+
+    if (!hotelIdFromUrl) {
+        roomsContainer.innerHTML = "<p style='color: red;'>⚠️ Invalid or missing Hotel ID in URL.</p>";
+        return;
+    }
+
+    const apiUrl = `http://localhost:8081/api/rooms/hotel/${hotelIdFromUrl}`;
+    console.log(`Fetching rooms from: ${apiUrl}`);
+
+    fetch(apiUrl)
+        .then(response => {
+            console.log(`Fetch response status for ${apiUrl}: ${response.status}`);
+            if (!response.ok) {
+                 return response.text().then(text => { throw new Error(`Network response error (Status: ${response.status}). Server message: ${text}`); });
+            }
+            const contentType = response.headers.get("content-type");
+            console.log(`Response Content-Type: ${contentType}`);
+            if (contentType && contentType.includes("application/json")) { return response.json(); }
+            else { return response.text().then(text => { console.error("Received non-JSON response:", text); throw new Error(`Received non-JSON response from server`); }); }
+        })
+        .then(data => {
+             console.log("Received data from API:", data);
+             if (!Array.isArray(data)) { console.error("API did not return an array:", data); throw new Error("Unexpected data format received."); }
+            if (data.length === 0) { roomsContainer.innerHTML = `<p>No rooms currently available for hotel ID: ${hotelIdFromUrl}.</p>`; console.log("No rooms found."); return; }
+
+            roomsContainer.innerHTML = ""; // Clear loading message
+            console.log("Processing rooms...");
+
+            data.forEach((room, index) => {
+                 console.log(` - Processing room index ${index}:`, JSON.stringify(room));
+
+                const roomId = room?.id ?? 'N/A';
+                const roomType = room?.type ?? 'Standard';
+                const roomPrice = room?.price ?? 'N/A';
+                const roomAvailability = (room?.available === true || room?.available === 1) ? 'Available' : 'Unavailable';
+                const roomDescription = room?.description ?? 'No description available'; // Get description
+
+                let bookingUrl = `booking.html?roomId=${roomId}&hotelId=${hotelIdFromUrl}`;
+                if (userIdFromUrl) { bookingUrl += `&userId=${userIdFromUrl}`; }
+                 console.log(`   Generated booking URL: ${bookingUrl}`);
+
+                // --- CLEANED UP HTML GENERATION ---
+                // Removed all placeholder comments from within the backticks
+                const roomHtml = `
+                    <div class="room">
+                        <div class="room-info">
+                             <h3>Room ${roomId} (${roomType})</h3>
+                            <p><strong>Price:</strong> ₹${roomPrice} / night</p>
+                            <p><strong>Status:</strong> ${roomAvailability}</p>
+                            <p class="room-description">${roomDescription}</p>
+                         </div>
+                         <a href="${bookingUrl}" class="book-button">Book Now</a>
+                     </div>
+                 `;
+                 // --- END CLEANUP ---
+
+                roomsContainer.innerHTML += roomHtml;
+            });
+        })
+        .catch(error => {
+            console.error("Error fetching or processing rooms:", error);
+            roomsContainer.innerHTML = `<p style='color: red;'>⚠️ Error loading rooms: ${error.message}. Check console and API endpoint.</p>`;
+        });
+});
+</script>
+</body>
+</html>

@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Available Hotels | Horizon Bookings</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <!-- <link rel="icon" href="favicon.ico" type="image/x-icon"> -->
+  <style>
+    /* --- Theme Variables --- */
+    :root {
+        --primary-color: #6a11cb;
+        --secondary-color: #2575fc;
+        --light-bg: #f8f9fa;
+        --card-bg: #ffffff;
+        --dark-text: #212529;
+        --grey-text: #6c757d;
+        --accent-color: var(--secondary-color);
+        --card-shadow: 0 5px 15px rgba(0, 0, 0, 0.08);
+        --card-hover-shadow: 0 8px 25px rgba(0, 0, 0, 0.12);
+        --font-primary: 'Poppins', sans-serif;
+        --transition-speed: 0.3s;
+        --border-radius: 10px;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: var(--font-primary); }
+    body { background-color: var(--light-bg); padding: 30px 20px; min-height: 100vh; }
+    .page-title { text-align: center; color: var(--dark-text); margin-bottom: 35px; font-weight: 600; font-size: 2.2rem; }
+    #hotelsContainer { display: flex; flex-wrap: wrap; gap: 25px; justify-content: center; max-width: 1200px; margin: 0 auto; padding: 0; list-style: none; }
+    #hotelsContainer .message { width: 100%; text-align: center; padding: 40px 20px; font-size: 1.1rem; color: var(--grey-text); }
+    #hotelsContainer .message.error { color: #dc3545; font-weight: 500; }
+    #hotelsContainer .message.error::before { content: "⚠️ "; }
+    .hotel-card { background-color: var(--card-bg); border-radius: var(--border-radius); box-shadow: var(--card-shadow); overflow: hidden; width: calc(33.333% - 20px); min-width: 280px; display: flex; flex-direction: column; transition: transform var(--transition-speed) ease, box-shadow var(--transition-speed) ease; cursor: pointer; border: 1px solid #eee; }
+    .hotel-card:hover { transform: translateY(-5px); box-shadow: var(--card-hover-shadow); }
+    .hotel-card-image { height: 200px; background-color: #e9ecef; background-size: cover; background-position: center; background-repeat: no-repeat; border-bottom: 1px solid #eee; }
+    .hotel-card-content { padding: 20px; flex-grow: 1; display: flex; flex-direction: column; }
+    .hotel-card-content h3 { font-size: 1.25rem; font-weight: 600; color: var(--dark-text); margin-bottom: 8px; }
+    .hotel-card-content .location { font-size: 0.9rem; color: var(--grey-text); margin-bottom: 15px; display: flex; align-items: center; gap: 5px; }
+    .hotel-card-content .location::before { content: ''; display: inline-block; width: 16px; height: 16px; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%236c757d' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z'%3E%3C/path%3E%3Ccircle cx='12' cy='10' r='3'%3E%3C/circle%3E%3C/svg%3E"); background-size: contain; background-repeat: no-repeat; opacity: 0.8; }
+    .hotel-card-content .price { font-size: 1.1rem; font-weight: 600; color: var(--accent-color); margin-top: auto; padding-top: 10px; }
+    @media (max-width: 992px) { .hotel-card { width: calc(50% - 15px); } }
+    @media (max-width: 600px) { .hotel-card { width: 100%; } body { padding: 20px 10px; } .page-title { font-size: 1.8rem; } }
+  </style>
+</head>
+<body>
+
+<h2 class="page-title">Available Hotels</h2>
+<div id="hotelsContainer">
+  <p class="message" id="loadingMessage">Loading available hotels...</p>
+</div>
+
+<script>
+  document.addEventListener("DOMContentLoaded", function () {
+    console.log("hotels.html: DOMContentLoaded");
+
+    const urlParams = new URLSearchParams(window.location.search);
+    const currentUserId = urlParams.get('userId');
+    const hotelsContainer = document.getElementById("hotelsContainer");
+    const loadingMessage = document.getElementById("loadingMessage");
+
+    if (!hotelsContainer) { console.error("Could not find hotelsContainer element!"); return; }
+
+    if (currentUserId) { console.log("Current User ID:", currentUserId); }
+    else { console.warn("User ID not found in URL parameters for hotels.html"); }
+
+    function displayMessage(message, isError = false) {
+        console.log(`Displaying message (isError=${isError}): ${message}`);
+        if (hotelsContainer) {
+            hotelsContainer.innerHTML = `<p class="message ${isError ? 'error' : ''}">${message}</p>`;
+        }
+    }
+
+    // Redirect function remains the same
+    window.viewHotel = function(hotelId) {
+        if (typeof hotelId !== 'number' || isNaN(hotelId)) {
+            console.error("Invalid hotelId passed to viewHotel:", hotelId);
+            alert("Could not view hotel details: Invalid ID.");
+            return;
+        }
+        console.log(`Navigating to details for hotel: ${hotelId}, User ID: ${currentUserId}`);
+        let redirectUrl = `hotel-details.html?id=${hotelId}`;
+        if (currentUserId) {
+            redirectUrl += `&userId=${currentUserId}`;
+        } else {
+            console.warn("Proceeding to hotel details without userId.");
+        }
+        window.location.href = redirectUrl;
+    }
+
+
+    const apiUrl = "http://localhost:8081/hotels/all";
+    console.log(`Attempting to fetch hotels from: ${apiUrl}`);
+
+    fetch(apiUrl)
+      .then(response => {
+          console.log(`Fetch response status for ${apiUrl}: ${response.status}`);
+          if (!response.ok) {
+               return response.text().then(text => { throw new Error(`HTTP error! Status: ${response.status}. Response: ${text.substring(0,100)}`); });
+          }
+          const contentType = response.headers.get("content-type");
+          console.log("Response Content-Type:", contentType);
+          if (!contentType || !contentType.includes("application/json")) {
+               return response.text().then(text => { console.error("Received non-JSON response:", text); throw new Error(`Received non-JSON response from server.`); });
+          }
+          return response.json();
+       })
+      .then(data => {
+          console.log("Successfully fetched and parsed JSON data:", data);
+          if (!Array.isArray(data)) { console.error("Error: Expected array", data); throw new Error("Unexpected data format received."); }
+          if (data.length === 0) { displayMessage("No hotels available."); return; }
+
+          if (loadingMessage) loadingMessage.remove();
+          hotelsContainer.innerHTML = '';
+          console.log("Cleared container, starting to add hotel cards.");
+
+          data.forEach((hotel, index) => {
+              const id = hotel?.id;
+              const name = hotel?.name ?? 'Unknown Hotel';
+              const location = hotel?.location ?? 'Unknown Location';
+              const price = hotel?.pricePerNight ?? 'N/A';
+              const imageUrl = (hotel?.imageUrl && String(hotel.imageUrl).trim() !== '')
+                               ? hotel.imageUrl
+                               : '/images/placeholder-hotel.png';
+
+              const hotelIdForClick = (typeof id === 'number' && !isNaN(id)) ? id : null;
+
+              // --- FINAL CLEANED HTML GENERATION ---
+              // Removed the literal comment text that was appearing on the page
+              const hotelCardHtml = `
+                  <div class="hotel-card" ${hotelIdForClick !== null ? `onclick="viewHotel(${hotelIdForClick})"` : ''} title="View details for ${name}">
+                      <div class="hotel-card-image" style="background-image: url('${imageUrl}');">
+                      </div>
+                      <div class="hotel-card-content">
+                          <h3>${name}</h3>
+                          <p class="location">${location}</p>
+                          <p class="price">₹${price} / night</p>
+                      </div>
+                  </div>
+              `;
+              // --- END FINAL CLEANUP ---
+
+              hotelsContainer.innerHTML += hotelCardHtml;
+          });
+          console.log("Finished adding hotel cards.");
+      })
+      .catch(error => {
+          console.error("Caught error during fetch or processing:", error);
+          displayMessage(`⚠️ ${error.message}. Please check the browser console and backend logs.`, true);
+      });
+  }); // End DOMContentLoaded
+</script>
+
+</body>
+</html>
